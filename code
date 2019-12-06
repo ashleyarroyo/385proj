@@ -1,1 +1,24 @@
 Type your code here
+library(shiny)
+
+
+ui <- fluidPage(
+
+   
+    titlePanel("GRappv Versus Loan Term"),
+
+   
+    sidebarLayout(
+        sidebarPanel(
+            selectInput("variable", "MIS_Status", 
+                        c("Paid in full" = "x",
+                          "Loan status charged off" = "y")),
+            sliderInput("priceInput", "GRAppv", 0, 100, c(0, 100), pre = "$")
+        ),
+
+        # Show a plot of the generated distribution
+        mainPanel(
+           #plotOutput("distPlot")
+        )
+    )
+)
