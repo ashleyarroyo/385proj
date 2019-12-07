@@ -1,34 +1,11 @@
-Type your code here
-library(shiny)
-
-
-ui <- fluidPage(
-
-   
-    titlePanel("GRappv Versus Loan Term"),
-
-   
-    sidebarLayout(
-        sidebarPanel(
-            selectInput("variable", "MIS_Status", 
-                        c("Paid in full" = "x",
-                          "Loan status charged off" = "y")),
-            sliderInput("priceInput", "GRAppv", 0, 100, c(0, 100), pre = "$")
-        ),
-
-        # Show a plot of the generated distribution
-        mainPanel(
-           #plotOutput("distPlot")
-        )
-    )
-)
-
 library(readr)
 library(shiny)
 #Assigning the data set to SBA
 SBA <- read.csv("C:/Users/bryan/Downloads/SBAnational (4).csv")
 #Getting rid of the decimals and spaces in Gross Approved 
 SBA$GA <- as.numeric(gsub("\\$|,", "", SBA$GrAppv))
+
+
 ui <- fluidPage(
     
     #Title
@@ -43,12 +20,28 @@ ui <- fluidPage(
             selectInput("UR", "Urbana or Rural",c("Urban","Rural")),
             selectInput("RVC", "Revolving Line of Credit",c("Yes", "No")),
             selectInput("LD", "LowDoc Loan Program",c("Yes","No")),
-            textInput("BT", "BankState"),
+            textInput("BT", "BankState(Put only the initals of the state)"),
             sliderInput("priceInput", "GRAppv", min = 0, max = max(SBA$GA), c(0, max = max(SBA$GA)), pre = "$")
         ),
         #Name and Plot Here
-        mainPanel(h3("Loan Term vs Gross Aprroved")
-            #plotOutput("distPlot")
+        mainPanel(h3("Loan Term vs Gross Aprroved"),
+            plotOutput("distPlot"),
         )
     )
 )
+
+
+# Define server logic required to draw a histogram
+server <- function(input, output) {
+
+    output$distPlot <- renderPlot({
+        # generate bins based on input$bins from ui.R
+    plot(SBA$GA, SBA$Term)
+        
+    
+    })
+
+}
+
+# Run the application 
+shinyApp(ui = ui, server = server)
