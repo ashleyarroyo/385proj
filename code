@@ -22,3 +22,33 @@ ui <- fluidPage(
         )
     )
 )
+
+library(readr)
+library(shiny)
+#Assigning the data set to SBA
+SBA <- read.csv("C:/Users/bryan/Downloads/SBAnational (4).csv")
+#Getting rid of the decimals and spaces in Gross Approved 
+SBA$GA <- as.numeric(gsub("\\$|,", "", SBA$GrAppv))
+ui <- fluidPage(
+    
+    #Title
+    titlePanel("GRappv Versus Loan Term"),
+    
+    #Filters Here
+    sidebarLayout(
+        sidebarPanel(
+            selectInput("MIS", "MIS_Status", 
+                        c("Paid in full" = "x",
+                          "Loan status charged off" = "y")),
+            selectInput("UR", "Urbana or Rural",c("Urban","Rural")),
+            selectInput("RVC", "Revolving Line of Credit",c("Yes", "No")),
+            selectInput("LD", "LowDoc Loan Program",c("Yes","No")),
+            textInput("BT", "BankState"),
+            sliderInput("priceInput", "GRAppv", min = 0, max = max(SBA$GA), c(0, max = max(SBA$GA)), pre = "$")
+        ),
+        #Name and Plot Here
+        mainPanel(h3("Loan Term vs Gross Aprroved")
+            #plotOutput("distPlot")
+        )
+    )
+)
