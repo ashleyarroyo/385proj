@@ -1,10 +1,9 @@
-# https://deanattali.com/blog/building-shiny-apps-tutorial/
-# super useful tutorial on how to make an app similar to ours
-
 library(readr)
 library(shiny)
+library(ggplot2)
+library(dplyr)
 #Assigning the data set to SBA
-SBA <- read.csv("C:/Users/bryan/Downloads/SBAnational (4).csv")
+SBA <- read.csv("C:/Users/mihir/Downloads/SBANationalData.csv", stringsAsFactors = FALSE)
 #Getting rid of the decimals and spaces in Gross Approved 
 SBA$GA <- as.numeric(gsub("\\$|,", "", SBA$GrAppv))
 
@@ -20,31 +19,38 @@ ui <- fluidPage(
             selectInput("MIS", "MIS_Status", 
                         c("Paid in full" = "x",
                           "Loan status charged off" = "y")),
-            selectInput("UR", "Urbana or Rural",c("Urban","Rural")),
+            #selectInput("UR", "Urban or Rural",c("Urban","Rural")),
             selectInput("RVC", "Revolving Line of Credit",c("Yes", "No")),
             selectInput("LD", "LowDoc Loan Program",c("Yes","No")),
             textInput("BT", "BankState(Put only the initals of the state)"),
-            sliderInput("priceInput", "GRAppv", min = 0, max = max(SBA$GA), c(0, max = max(SBA$GA)), pre = "$")
+            sliderInput("priceInput", "GRAppv", min = 0, max = max(SBA$GA), c(0, max = max(SBA$GA)), pre = "$"),
+            radioButtons("typeInput", "Urban or Rural",
+                         choices = c("Urban","Rural"),
+                         selected = "yes"), 
         ),
         #Name and Plot Here
-        mainPanel(h3("Loan Term vs Gross Aprroved"),
-            plotOutput("distPlot"),
+        mainPanel(h3("Gross Approved vs Loan Term"),
+                  plotOutput("placeholder"),
         )
     )
 )
 
 
-# Define server logic required to draw a histogram
-server <- function(input, output) {
-
-    output$distPlot <- renderPlot({
-        # generate bins based on input$bins from ui.R
-    plot(SBA$GA, SBA$Term)
-        
+# Define server logic required to draw a plot
+server <- function(input, output)
+{
     
+    output$placeholder <- renderPlot ({
+        
+        ggplot(data = SBA) +
+            geom_point(mapping = aes(x = SBA$GA, y = SBA$Term))
+        
+        
     })
-
+    
+    
 }
+
 
 # Run the application 
 shinyApp(ui = ui, server = server)
