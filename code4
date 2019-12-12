@@ -1,0 +1,61 @@
+library(readr)
+library(shiny)
+library(ggplot2)
+library(dplyr)
+#Assigning the data set to SBA
+SBA <- read.csv("C:/Stat_385/aarroy30/SBANational.csv", stringsAsFactors = FALSE)
+#Getting rid of the decimals and spaces in Gross Approved 
+SBA$GrAppv <- as.numeric(gsub("\\$|,", "", SBA$GrAppv))
+
+ui <- fluidPage(
+    
+    #Title
+    titlePanel("GRappv Versus Loan Term"),
+    sidebarLayout(sidebarPanel(h4("Choose"),
+                               selectInput("MIS", "MIS_Status", 
+                                           c("Paid in full" = "x",
+                                             "Loan status charged off" = "y")),
+                               #selectInput("UR", "Urban or Rural",c("Urban","Rural")),
+                               selectInput("RVC", "Revolving Line of Credit",c("Yes", "No")),
+                               selectInput("LD", "LowDoc Loan Program",c("Yes","No")),
+                               textInput("BT", "BankState(Put only the initals of the state)"),
+                               sliderInput("lm", "GrAppv",
+                                           min = min(SBA$GrAppv), max = max(SBA$GrAppv),
+                                           value = max(SBA$GrAppv) / 2, step = 0.1),
+                               h4("Predicted term"), verbatimTextOutput("predict"), width = 4),
+                  
+                  # Show a plot of the carat/price relationship
+                  mainPanel("GA/T Relationship", plotOutput("distPlot"))
+    ))
+
+                        
+
+# Define server logic
+server <- function(input, output) {
+    
+    
+    # create the initial output
+    output$distPlot <- renderPlot({
+        
+        
+        # plot
+        p <- ggplot(data = SBA, aes(x = GrAppv, y = Term)) + geom_point()
+        p <- p + geom_smooth(method = "lm") + xlab("GrAppv") + ylab("Term")
+        p <- p + xlim(0, 400) + ylim (0, 50000)
+        p
+    }, height = 700)
+    
+    # create linear model
+    output$predict <- renderPrint({
+        fit <- lm(Term~GrAppv,data=SBA)
+        unname(predict(fit, data.frame(Term = input$lm)))})
+    
+    observeEvent(input$predict, {distPlot <<- NULL
+    output$distPlot <- renderPlot({p <- ggplot(data = SBA, aes(x = GrAppv, y = Term)) + geom_point()
+    p <- p + geom_smooth(method = "lm") + xlab("GrAppv") + ylab("Term")
+    p <- p + xlim(0, 400) + ylim (0, 50000)
+    p
+    }, height = 700)})}
+
+# Run the application 
+shinyApp(ui = ui, server = server)
