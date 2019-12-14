@@ -1,0 +1,83 @@
+library(readr)
+library(shiny)
+library(ggplot2)
+library(dplyr)
+library(tidyverse)
+library(curl)
+#Assigning the data set to SBA
+SBAnational <- read.csv("C:/Stat_385/aarroy30/SBANational.csv", stringsAsFactors = FALSE)
+SBAnational_data <- SBAnational
+#Getting rid of the decimals and spaces in Gross Approved 
+SBAnational_data$GrAppv <- as.numeric(gsub("\\$|,", "", SBAnational$GrAppv))
+
+SBAnational_data$UrbanRural<- as.factor(SBAnational_data$UrbanRural)
+levels(SBAnational_data$UrbanRural) <- c("Missing","Urban", "Rural")
+
+SBAnational_data$ApprovalFY<- as.numeric(SBAnational_data$ApprovalFY)
+str(SBAnational_data)
+
+SBAnational_data$RevLineCr<-as.factor(SBAnational_data$RevLineCr)
+
+
+
+ui <- fluidPage(
+    
+    #Title
+    titlePanel("GRappv Versus Loan Term"),
+    
+    #Filters Here
+    sidebarLayout(
+        sidebarPanel(
+                     h4("Variables"),
+                     selectInput("RevLineCr",
+                                 "Yes or No",
+                                 (sort(
+                                     unique(SBAnational_data$RevLineCr),
+                                 ))),
+                     selectInput("UrbanRural",
+                                 "Urban or Rural",
+                                 (sort(
+                                     unique(SBAnational_data$UrbanRural)
+                                 ))),
+                     h4("GrAppv Summary"),
+                     verbatimTextOutput("summary"),
+                     
+                     sliderInput(
+                         "lm",
+                         "Gross Approved",
+                         min = min(SBAnational_data$GrAppv),
+                         max = max(SBAnational_data$GrAppv),
+                         value = median(SBAnational_data$GrAppv),
+                         step = 0.5
+                     ),
+                     h4("Esimated GrAppv based on Selected Variables"),
+                     verbatimTextOutput("predict"),
+                     width = 4
+        ),
+
+#Name and Plot Here
+mainPanel(h3("Gross Approved vs Loan Term"),
+          plotOutput("placeholder"),
+)
+)
+)
+
+
+
+
+server <- function(input, output)
+{
+    
+    output$placeholder <- renderPlot ({
+        
+        ggplot(data = SBAnational_data) +
+            geom_point(mapping = aes(x = SBAnational_data$Term, y = SBAnational_data$GrAppv))
+        
+        
+    })
+    
+    
+}
+
+# Run the application 
+shinyApp(ui = ui, server = server)
