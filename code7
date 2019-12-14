@@ -1,0 +1,63 @@
+library(readr)
+library(shiny)
+library(ggplot2)
+library(dplyr)
+library(tidyverse)
+library(curl)
+
+SBAnational <- read.csv("C:/Stat_385/aarroy30/SBANational.csv", stringsAsFactors = FALSE)
+SBA<-na.omit(SBAnational)
+SBA$GrAppv <- as.numeric(gsub("\\$|,", "", SBA$GrAppv))
+SBA$ApprovalFY<- as.numeric(SBA$ApprovalFY)
+
+# Define UI for application that draws a histogram
+ui <- fluidPage(
+    
+    # Application title
+    titlePanel("Predict GrAppv in SBA data with Years"),
+    
+    # Sidebar with a slider input for number of bins 
+    sidebarLayout(
+        sidebarPanel(
+            sliderInput("sliderYears","What is the Year?", min = 1990, max = 2016, value = 2005),
+            submitButton("Submit") # SubmitButton is handy for delayed reactivity where your server.R function includes calculation intensive algorithm
+        ),
+        
+        # Show a plot of the generated distribution
+        mainPanel(
+            plotOutput("plot1"),
+            h4("Predicted GrAppv from the model (Red Circle):"),
+            textOutput("pred1"),
+        )
+    )
+)
+
+
+# Define server logic required to draw a histogram
+server <- function(input, output)
+{
+    # 1
+    model1<-lm(SBA$GrAppv, SBA$ApprovalFY)
+    # 2
+    model1pred<-reactive({
+        YearsInput<-input$sliderYears
+        predict(model1, newdata=data.frame(Years=YearsInput))
+    })
+    
+    # 4
+    output$plot1<-renderPlot({
+        YearsInput<-input$sliderYears
+        plot(SBA$ApprovalFY, SBA$GrAppv, xlab = "Year", ylab = "GrAppv", bty="n", pch=16)
+        points(YearsInput, model1pred(), col="red", pch=16, cex=2)
+    })
+    
+    # 5
+    output$pred1<-renderText({
+        model1pred()
+    })
+    
+}
+
+
+# Run the application 
+shinyApp(ui = ui, server = server)
