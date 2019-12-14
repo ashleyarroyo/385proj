@@ -1,0 +1,67 @@
+library(readr)
+library(shiny)
+library(ggplot2)
+library(dplyr)
+#Assigning the data set to SBA
+SBAnational <- read.csv("C:/Stat_385/aarroy30/SBANational.csv", stringsAsFactors = FALSE)
+#Getting rid of the decimals and spaces in Gross Approved 
+SBAnational$GrAppv <- as.numeric(gsub("\\$|,", "", SBA$GrAppv))
+
+ui <- fluidPage(
+    
+    #Title
+    titlePanel("GRappv Versus Loan Term"),
+    
+    #Filters Here
+    sidebarLayout(
+        sidebarPanel(
+                # set input field(s)
+                sliderInput("in.ApprovalFY", "Select year / range:",
+                            min = 1990,
+                            max = 2015,
+                            value = c(1995,1997),
+                            ticks = TRUE,
+                            sep = ""),
+                selectInput("in.UrbanRural", "Select region:", choices = SBAnational$UrbanRural, selected = "Urban")
+        ),
+                
+                # Show a plot of the GA/T relationship
+                #Name and Plot Here
+                mainPanel(h3("Gross Approved vs Loan Term"),
+                          plotOutput("placeholder"),
+            )))
+
+
+#server.r
+
+# load shiny package
+# Define server logic
+server <- function(input, output) {
+    SBA <- read.csv("C:/Stat_385/aarroy30/SBANational.csv", stringsAsFactors = FALSE)
+    # create text output
+    output$out.ApprovalFY   <- renderText({
+        paste("Selected period: From ", input$in.ApprovalFY[1], "to ", input$in.ApprovalFY[2])})
+    output$out.UrbanRural <- renderText({
+        paste("Selected region: ", input$in.UrbanRural)})
+    # create plot output
+    output$plot       <- renderPlot({
+        # select values according to user inputed values
+        ch <- subset(
+            SBAnational,
+            UrbanRural ==     input$in.UrbanRural  &
+                ApprovalFY   >= input$in.ApprovalFY[1] &
+                ApprovalFY   <= input$in.ApprovalFY[2],
+            select = c(ApprovalFY, GrAppv))
+        # create plot with selected results
+        ggplot(ch, aes(ch$ApprovalFY, ch$GrAppv)) +
+            geom_point(aes(size = GrAppv)) +
+            geom_smooth(method = "loess", se = FALSE) +
+            coord_cartesian() +
+            scale_color_gradient() +
+            labs(x = "Year", y = "GrAppv")
+    })
+}
+
+
+# Run the application 
+shinyApp(ui = ui, server = server)
