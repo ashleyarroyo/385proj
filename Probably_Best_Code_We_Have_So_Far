@@ -1,0 +1,78 @@
+library(shiny)
+
+# Define UI for application that draws a histogram
+shinyUI(fluidPage(
+    
+    # Application title
+    titlePanel("Predict GrAppv in SBA data with Years"),
+    
+    # Sidebar with a slider input for number of bins 
+    sidebarLayout(
+        sidebarPanel(
+            sliderInput("slideryear","What is the Years", min = 1990, max = 2016, value = 2006),
+            sliderInput("sliderterm", "Term Length", min = 60, max = 400, value = 84),
+            submitButton("Submit") # SubmitButton is handy for delayed reactivity where your server.R function includes calculation intensive algorithm
+        ),
+        
+        # Show a plot of the generated distribution
+        mainPanel(
+            fluidRow(
+                splitLayout(cellWidths = c("50%", "50%"), plotOutput("plot1"), plotOutput("plot2"))
+            ),
+            h4("Predicted GrAppv from the model (Red Circle):"),
+            textOutput("pred1"),
+            textOutput("pred2")
+        )
+    )
+))
+
+
+---------------------------------------
+
+library(shiny)
+
+
+# Define server logic required to draw a histogram
+shinyServer(function(input, output) {
+    # 1
+    SBAnational <- read.csv("C:/Stat_385/aarroy30/SBANational.csv", stringsAsFactors = FALSE)
+    SBAnational$GrAppv <- as.numeric(gsub("\\$|,", "", SBAnational$GrAppv))
+    SBAnational$ApprovalFY<- as.numeric(SBAnational$ApprovalFY)
+    ApprovalFY<-SBAnational$ApprovalFY
+    GrAppv<-SBAnational$GrAppv
+    model1<-lm(GrAppv~ApprovalFY)
+    # 2
+    model1pred<-reactive({
+        YearInput<-input$slideryear
+        predict(model1, newdata = data.frame(ApprovalFY=YearInput))
+    })
+    # 2
+    Term<-SBAnational$Term
+    model2<-lm(GrAppv~Term)
+    model2pred<-reactive({
+        TermInput<-input$sliderterm
+        predict(model2, newdata = data.frame(Term=TermInput))
+    })
+    
+    # 4
+    output$plot1<-renderPlot({
+        YearInput<-input$slideryear
+        plot(SBAnational$ApprovalFY, SBAnational$GrAppv, xlab = "Years", ylab = "GrAppv", bty="n", pch=16)
+        points(YearInput, model1pred(), col="red", pch=16, cex=2)
+    })
+    
+    output$plot2<-renderPlot({
+        TermInput<-input$sliderterm
+        plot(SBAnational$Term, SBAnational$GrAppv, xlab = "Term Length", ylab = "GrAppv", bty="n", pch=16)
+        points(TermInput, model2pred(), col="red", pch=16, cex=2)
+    })
+    
+    # 5
+    output$pred1<-renderText({
+        model1pred()
+    })
+    output$pred2<-renderText({
+        model2pred()
+    })
+    
+})
